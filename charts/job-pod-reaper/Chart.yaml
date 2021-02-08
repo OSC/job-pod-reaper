@@ -1,0 +1,8 @@
+apiVersion: v2
+name: job-pod-reaper
+description: Job Pod Reaper
+type: application
+version: 0.1.0
+appVersion: 0.1.0
+maintainers:
+  - name: treydock

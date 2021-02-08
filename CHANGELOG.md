@@ -1,3 +1,7 @@
+## v0.2.1 / 2021-02-08
+
+* Fix Helm chart tag version
+
 ## v0.2.0 / 2021-02-08
 
 * Add support for installing with Helm

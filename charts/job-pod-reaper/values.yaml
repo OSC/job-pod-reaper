@@ -18,7 +18,7 @@ image:
   repository: docker.io/ohiosupercomputer/job-pod-reaper
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v0.1.0"
+  tag:
 
 imagePullSecrets: []
 nameOverride: ""

@@ -65,9 +65,9 @@ release-notes:
 	true
 
 tag:
-	@grep -q '## $(VERSION)' CHANGELOG.md || { echo ">> Update CHANGELOG.md with version" ; exit 1; }
+	@grep -q '## v$(VERSION)' CHANGELOG.md || { echo ">> Update CHANGELOG.md with version" ; exit 1; }
 	@sed -i -e 's/version:.*/version: $(VERSION)/g' -e 's/appVersion:.*/appVersion: $(VERSION)/g' charts/job-pod-reaper/Chart.yaml
 	@git add charts/job-pod-reaper/Chart.yaml
 	@git add CHANGELOG.md
 	@git commit -m "Release $(VERSION)"
-	@git tag $(VERSION)
+	@git tag v$(VERSION)

@@ -14,7 +14,15 @@ jobs:
     steps:
       - name: Set version
         id: version
-        run: echo ::set-output name=version::${GITHUB_REF#refs/*/}
+        run: |
+          ref=${GITHUB_REF#refs/*/}
+          if [ $ref = "main" ]; then
+            version="latest"
+          else
+            version=$ref
+          fi
+          echo ::set-output name=ref::$ref
+          echo ::set-output name=version::$version
       - uses: actions/checkout@v2
       - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v1
@@ -23,20 +31,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      - name: Build and push latest
-        if: ${{ github.ref == 'refs/heads/main' }}
-        id: docker_build_latest
-        uses: docker/build-push-action@v2
-        with:
-          context: ./
-          file: ./Dockerfile
-          push: true
-          tags: ohiosupercomputer/job-pod-reaper:latest
-          build-args: |
-            VERSION=main
-      - name: Build and push version ${{ steps.version.outputs.version }}
-        if: ${{ github.ref != 'refs/heads/main' }}
-        id: docker_build_version
+      - name: Build and push
+        id: docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./
@@ -44,10 +40,6 @@ jobs:
           push: true
           tags: ohiosupercomputer/job-pod-reaper:${{ steps.version.outputs.version }}
           build-args: |
-            VERSION=${{ steps.version.outputs.version }}
+            VERSION=${{ steps.version.outputs.ref }}
       - name: Image digest
-        if: steps.docker_build_latest.outputs.digest
-        run: echo ${{ steps.docker_build_latest.outputs.digest }}
-      - name: Image digest
-        if: steps.docker_build_version.outputs.digest
-        run: echo ${{ steps.docker_build_version.outputs.digest }}
+        run: echo ${{ steps.docker_build.outputs.digest }}

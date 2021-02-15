@@ -22,6 +22,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.29
+          args: --timeout=2m
       - name: Run tests
         run: make all
       - name: Run coverage

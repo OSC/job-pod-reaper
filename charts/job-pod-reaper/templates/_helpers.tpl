@@ -60,14 +60,3 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{/*
-Image version
-*/}}
-{{- define "job-pod-reaper.imageVersion" -}}
-{{- if .Values.image.tag }}
-{{- .Values.image.tag }}
-{{- else }}
-{{- printf "v%s" .Chart.AppVersion }}
-{{- end }}
-{{- end }}

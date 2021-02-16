@@ -117,6 +117,16 @@ Example: `pod.kubernetes.io/lifetime: 24h`
 
 The above annotation will cause the pod to be reaped (killed) once it reaches the age of 1d (24h)
 
+### Changing what is reaped
+
+By default pods in any namespace with `pod.kubernetes.io/lifetime` annotation that have `job` label are reaped if their lifetime has expired.  Any Services, ConfigMaps or Secrets with matching `job` label in the same namespace as the expired pod will also be reaped.
+
+If you wish to scope the namespaces searched change either `--namespace-labels` flag to limit namespaces searched by label, or list the namespaces with `--reap-namespaces` (comma separated).  See [Cluster Role Bindings](#cluster-role-bindings) on the necessary RBAC changes based on the scope of what namespaces to search.
+
+If you wish to only reap pods with a given label, set `--pods-labels`.
+
+If you wish to reap pods only and don't set the `job` label set `--job-label=none`.
+
 ## Deployment Details
 
 The job-pod-reaper is intended to be deployed inside a Kubernetes cluster. It can also be run outside the cluster via cron.
@@ -131,7 +141,7 @@ The following flags and environment variables can modify the behavior of the job
 | --reap-namespaces=all | REAP_NAMESPACES=all | Comma separated list of namespaces to reap, ignored if use --namespace-labels |
 | --namespace-labels    | NAMESPACE_LABELS    | The labels to use when filtering namespaces to search, overrides --reap-namespaces |
 | --pods-labels         | PODS_LABELS         | Comma separated list of Pod labels to filter which pods to reap       |
-| --job-label=job       | JOB_LABEL=job       | The label associated to objects that represent a job to reap          |
+| --job-label=job       | JOB_LABEL=job       | The label associated to objects that represent a job to reap, set to `none` to not require job label |
 | --kubeconfig          | KUBECONFIG          | The path to Kubernetes config, required when run outside Kubernetes   |
 | --listen-address      | LISTEN_ADDRESS=:8080| Address to listen for HTTP requests                                   |
 | --no-process-metrics  | PROCESS_METRICS=false | Disable metrics about the running processes such as CPU, memory and Go stats |

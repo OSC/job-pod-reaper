@@ -299,6 +299,9 @@ func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Log
 				if val, ok := pod.Labels[*jobLabel]; ok {
 					level.Debug(podLogger).Log("msg", "Pod has job label", "job", val)
 					jobID = val
+				} else if *jobLabel == "none" {
+					level.Debug(podLogger).Log("msg", "Ignoring absense of job label", "job", "none")
+					jobID = "none"
 				} else {
 					level.Debug(podLogger).Log("msg", "Pod does not have job label, skipping")
 					continue
@@ -321,6 +324,10 @@ func getJobObjects(clientset kubernetes.Interface, jobs []podJob, logger log.Log
 	for _, job := range jobs {
 		jobObjects = append(jobObjects, jobObject{objectType: "pod", jobID: job.jobID, name: job.podName, namespace: job.namespace})
 		jobLogger := log.With(logger, "job", job.jobID, "namespace", job.namespace)
+		if job.jobID == "none" {
+			level.Debug(jobLogger).Log("msg", "Job ID is none, skipping search for additional objects")
+			continue
+		}
 		listOptions := metav1.ListOptions{
 			LabelSelector: fmt.Sprintf("%s=%s", *jobLabel, job.jobID),
 		}

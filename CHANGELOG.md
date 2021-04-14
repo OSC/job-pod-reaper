@@ -1,3 +1,7 @@
+## Unreleased
+
+* Update Kubernetes Go dependencies to 0.20.5 (Kubernetes 1.20.x)
+
 ## v0.3.0 / 2021-02-16
 
 * Make job label optional

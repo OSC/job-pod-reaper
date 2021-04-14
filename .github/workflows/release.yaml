@@ -6,20 +6,13 @@ on:
       - '*'
 
 jobs:
-  set-output:
-    name: Set Output
+  release:
     runs-on: ubuntu-latest
+    name: Create Release
     steps:
       - name: Set version
         id: version
         run: echo ::set-output name=version::${GITHUB_REF#refs/*/}
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-  release:
-    needs: [set-output]
-    runs-on: ubuntu-latest
-    name: Create Release
-    steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -41,7 +34,7 @@ jobs:
       - uses: creekorful/goreportcard-action@v1.0
       - name: Make Release
         env:
-          VERSION: ${{ needs.set-output.outputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           rm -rf release
           make release

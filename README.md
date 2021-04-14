@@ -28,7 +28,7 @@ Currently this code is built and tested against Kubernetes 1.19.
 
 ### Install with Helm
 
-Only Helm >= 3.2.0 is supported.
+Only Helm 3 is supported.
 
 ```
 helm repo add job-pod-reaper https://osc.github.io/job-pod-reaper

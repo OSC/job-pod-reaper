@@ -9,7 +9,7 @@ GITBRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 BUILDUSER := $(shell whoami)@$(shell hostname)
 BUILDDATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-.PHONY: release
+.PHONY: unused lint style test release
 
 all: unused lint style test
 

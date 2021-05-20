@@ -117,6 +117,15 @@ func clientset() kubernetes.Interface {
 				"job": "2",
 			},
 		},
+	}, &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "service-job4",
+			Namespace: "user-user2",
+			Labels: map[string]string{
+				"job":                          "4",
+				"app.kubernetes.io/managed-by": "open-ondemand",
+			},
+		},
 	}, &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "configmap-job1",
@@ -133,6 +142,15 @@ func clientset() kubernetes.Interface {
 				"job": "2",
 			},
 		},
+	}, &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "configmap-job4",
+			Namespace: "user-user2",
+			Labels: map[string]string{
+				"job":                          "4",
+				"app.kubernetes.io/managed-by": "open-ondemand",
+			},
+		},
 	}, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret-job1",
@@ -147,6 +165,15 @@ func clientset() kubernetes.Interface {
 			Namespace: "user-user2",
 			Labels: map[string]string{
 				"job": "2",
+			},
+		},
+	}, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret-job4",
+			Namespace: "user-user2",
+			Labels: map[string]string{
+				"job":                          "4",
+				"app.kubernetes.io/managed-by": "open-ondemand",
 			},
 		},
 	})
@@ -192,7 +219,7 @@ func TestGetNamespacesByLabel(t *testing.T) {
 }
 
 func TestGetJobs(t *testing.T) {
-	if _, err := kingpin.CommandLine.Parse([]string{"--pods-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
+	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
 	w := log.NewSyncWriter(os.Stderr)
@@ -225,7 +252,7 @@ func TestGetJobs(t *testing.T) {
 }
 
 func TestGetJobsCase1(t *testing.T) {
-	if _, err := kingpin.CommandLine.Parse([]string{"--pods-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
+	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
 	w := log.NewSyncWriter(os.Stderr)
@@ -357,7 +384,7 @@ func TestGetJobsNoJobLabel(t *testing.T) {
 }
 
 func TestRunOnDemand(t *testing.T) {
-	if _, err := kingpin.CommandLine.Parse([]string{"--pods-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
+	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
 	w := log.NewSyncWriter(os.Stderr)
@@ -412,10 +439,10 @@ func TestRunOnDemand(t *testing.T) {
 	job_pod_reaper_errors_total 0
 	# HELP job_pod_reaper_reaped_total Total number of object types reaped
 	# TYPE job_pod_reaper_reaped_total counter
-	job_pod_reaper_reaped_total{type="configmap"} 2
+	job_pod_reaper_reaped_total{type="configmap"} 3
 	job_pod_reaper_reaped_total{type="pod"} 2
-	job_pod_reaper_reaped_total{type="secret"} 2
-	job_pod_reaper_reaped_total{type="service"} 2
+	job_pod_reaper_reaped_total{type="secret"} 3
+	job_pod_reaper_reaped_total{type="service"} 3
 	`
 
 	if err := testutil.GatherAndCompare(metricGathers(), strings.NewReader(expected),
@@ -480,10 +507,10 @@ func TestRun(t *testing.T) {
 	job_pod_reaper_errors_total 0
 	# HELP job_pod_reaper_reaped_total Total number of object types reaped
 	# TYPE job_pod_reaper_reaped_total counter
-	job_pod_reaper_reaped_total{type="configmap"} 2
+	job_pod_reaper_reaped_total{type="configmap"} 3
 	job_pod_reaper_reaped_total{type="pod"} 3
-	job_pod_reaper_reaped_total{type="secret"} 2
-	job_pod_reaper_reaped_total{type="service"} 2
+	job_pod_reaper_reaped_total{type="secret"} 3
+	job_pod_reaper_reaped_total{type="service"} 3
 	`
 
 	if err := testutil.GatherAndCompare(metricGathers(), strings.NewReader(expected),
@@ -521,22 +548,22 @@ func TestRunNoJobLabel(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error getting services: %v", err)
 	}
-	if len(services.Items) != 2 {
+	if len(services.Items) != 3 {
 		t.Errorf("Unexpected number of services, got: %d", len(services.Items))
 	}
 	configmaps, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting configmaps: %v", err)
 	}
-	if len(configmaps.Items) != 2 {
+	if len(configmaps.Items) != 3 {
 		t.Errorf("Unexpected number of services, got: %d", len(configmaps.Items))
 	}
-	secrets, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	secrets, err := clientset.CoreV1().Secrets(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting secrets: %v", err)
 	}
-	if len(secrets.Items) != 2 {
-		t.Errorf("Unexpected number of services, got: %d", len(secrets.Items))
+	if len(secrets.Items) != 3 {
+		t.Errorf("Unexpected number of secrets, got: %d", len(secrets.Items))
 	}
 
 	expected := `

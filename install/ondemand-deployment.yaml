@@ -26,7 +26,7 @@ spec:
         - --reap-max=30
         - --reap-interval=60s
         - --namespace-labels=app.kubernetes.io/name=open-ondemand
-        - --pods-labels=app.kubernetes.io/managed-by=open-ondemand
+        - --object-labels=app.kubernetes.io/managed-by=open-ondemand
         - --job-label=job
         - --listen-address=:8080
         - --log-level=info

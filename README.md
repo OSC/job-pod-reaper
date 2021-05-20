@@ -42,7 +42,7 @@ helm install job-pod-reaper job-pod-reaper/job-pod-reaper \
 -n job-pod-reaper --create-namespace \
 --set config.reapNamespaces=false \
 --set config.namespaceLabels='app.kubernetes.io/name=open-ondemand' \
---set config.podsLabels='app.kubernetes.io/managed-by=open-ondemand'
+--set config.objectLabels='app.kubernetes.io/managed-by=open-ondemand'
 ```
 
 See [Cluster Role Bindings](#cluster-role-bindings) for information on necessary RoleBinding needed to allow job-pod-reaper to reap OnDemand pods if not reaping all namespaces.
@@ -123,7 +123,7 @@ By default pods in any namespace with `pod.kubernetes.io/lifetime` annotation th
 
 If you wish to scope the namespaces searched change either `--namespace-labels` flag to limit namespaces searched by label, or list the namespaces with `--reap-namespaces` (comma separated).  See [Cluster Role Bindings](#cluster-role-bindings) on the necessary RBAC changes based on the scope of what namespaces to search.
 
-If you wish to only reap pods with a given label, set `--pods-labels`.
+If you wish to only reap pods with a given label, set `--object-labels`. This also affects which possible orphaned job objects will be reaped.
 
 If you wish to reap pods only and don't set the `job` label set `--job-label=none`.
 
@@ -140,7 +140,7 @@ The following flags and environment variables can modify the behavior of the job
 | --reap-interval=60s   | REAP_INTERVAL=60s   | [Duration](https://golang.org/pkg/time/#ParseDuration) between each reaping execution when run in loop |
 | --reap-namespaces=all | REAP_NAMESPACES=all | Comma separated list of namespaces to reap, ignored if use --namespace-labels |
 | --namespace-labels    | NAMESPACE_LABELS    | The labels to use when filtering namespaces to search, overrides --reap-namespaces |
-| --pods-labels         | PODS_LABELS         | Comma separated list of Pod labels to filter which pods to reap       |
+| --object-labels         | OBJECT_LABELS         | Comma separated list of labels to filter which pods and orphaned objects to reap |
 | --job-label=job       | JOB_LABEL=job       | The label associated to objects that represent a job to reap, set to `none` to not require job label |
 | --kubeconfig          | KUBECONFIG          | The path to Kubernetes config, required when run outside Kubernetes   |
 | --listen-address      | LISTEN_ADDRESS=:8080| Address to listen for HTTP requests                                   |

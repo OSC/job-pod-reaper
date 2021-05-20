@@ -45,8 +45,8 @@ spec:
           {{- if .Values.config.namespaceLabels }}
             - --namespace-labels={{ .Values.config.namespaceLabels }}
           {{- end }}
-          {{- if .Values.config.podsLabels }}
-            - --pods-labels={{ .Values.config.podsLabels }}
+          {{- if .Values.config.objectLabels }}
+            - --object-labels={{ .Values.config.objectLabels }}
           {{- end }}
           {{- if .Values.config.jobLabel }}
             - --job-label={{ .Values.config.jobLabel }}

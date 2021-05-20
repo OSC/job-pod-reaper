@@ -1,4 +1,4 @@
-## Unreleased
+## v0.5.0 / 2021-05-20
 
 * Support reaping orphaned objects if object's corresponding pod job is gone
 * **BREAKING** Rename --pods-labels flag to --object-labels, rename Helm value podsLabels to objectLabels

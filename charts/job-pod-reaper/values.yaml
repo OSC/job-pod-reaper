@@ -9,7 +9,7 @@ config:
   reapNamespaces: all
   # For OnDemand, also can comment out reapNamespaces
   # namespaceLabels: app.kubernetes.io/name=open-ondemand
-  # podsLabels: app.kubernetes.io/managed-by=open-ondemand
+  # objectLabels: app.kubernetes.io/managed-by=open-ondemand
   jobLabel: job
   httpPort: 8080
 extraArgs: []

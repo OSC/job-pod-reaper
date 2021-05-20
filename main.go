@@ -48,7 +48,7 @@ var (
 	reapInterval    = kingpin.Flag("reap-interval", "Duration between repear runs").Default("60s").Envar("REAP_INTERLVAL").Duration()
 	reapNamespaces  = kingpin.Flag("reap-namespaces", "Namespaces to reap, ignored if --namespace-labels is set").Default("all").Envar("REAP_NAMESPACES").String()
 	namespaceLabels = kingpin.Flag("namespace-labels", "Labels to use when filtering namespaces, causes --namespace-labels to be ignored").Default("").Envar("NAMESPACE_LABELS").String()
-	podsLabels      = kingpin.Flag("pods-labels", "Labels to use when filtering pods").Default("").Envar("PODS_LABELS").String()
+	objectLabels    = kingpin.Flag("object-labels", "Labels to use when filtering objects").Default("").Envar("OBJECT_LABELS").String()
 	jobLabel        = kingpin.Flag("job-label", "Label to associate pod job with other objects").Default("job").Envar("JOB_LABEL").String()
 	kubeconfig      = kingpin.Flag("kubeconfig", "Path to kubeconfig when running outside Kubernetes cluster").Default("").Envar("KUBECONFIG").String()
 	listenAddress   = kingpin.Flag("listen-address", "Address to listen for HTTP requests").Default(":8080").Envar("LISTEN_ADDRESS").String()
@@ -218,11 +218,16 @@ func run(clientset kubernetes.Interface, logger log.Logger) error {
 		level.Error(logger).Log("msg", "Error getting jods", "err", err)
 		return err
 	}
+	orphanedObjects, err := getOrphanedJobObjects(clientset, jobs, namespaces, logger)
+	if err != nil {
+		level.Error(logger).Log("msg", "Error getting orphaned objects", "err", err)
+	}
 	jobObjects, err := getJobObjects(clientset, jobs, logger)
 	if err != nil {
 		level.Error(logger).Log("msg", "Error getting job objects", "err", err)
 		return err
 	}
+	jobObjects = append(jobObjects, orphanedObjects...)
 	errCount := reap(clientset, jobObjects, logger)
 	if errCount > 0 {
 		err := fmt.Errorf("%d errors encountered during reap", errCount)
@@ -262,7 +267,7 @@ func getNamespaces(clientset kubernetes.Interface, logger log.Logger) ([]string,
 }
 
 func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Logger) ([]podJob, error) {
-	labels := strings.Split(*podsLabels, ",")
+	labels := strings.Split(*objectLabels, ",")
 	jobs := []podJob{}
 	toReap := 0
 	for _, ns := range namespaces {
@@ -317,6 +322,78 @@ func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Log
 		}
 	}
 	return jobs, nil
+}
+
+func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, namespaces []string, logger log.Logger) ([]jobObject, error) {
+	jobObjects := []jobObject{}
+	jobIDs := []string{}
+	for _, job := range jobs {
+		jobIDs = append(jobIDs, job.jobID)
+	}
+	labels := strings.Split(*objectLabels, ",")
+	for _, namespace := range namespaces {
+		orphanedLogger := log.With(logger, "namespace", namespace)
+		for _, l := range labels {
+			listOptions := metav1.ListOptions{
+				LabelSelector: l,
+			}
+			services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), listOptions)
+			if err != nil {
+				level.Error(orphanedLogger).Log("msg", "Error getting services", "err", err)
+				metricErrorsTotal.Inc()
+				return nil, err
+			}
+			for _, service := range services.Items {
+				if val, ok := service.Labels[*jobLabel]; ok {
+					level.Debug(orphanedLogger).Log("msg", "Service has job label", "job", val)
+					if !sliceContains(jobIDs, val) {
+						level.Debug(orphanedLogger).Log("msg", "Found orphaned Service", "job", val, "name", service.Name, "namespace", service.Namespace)
+						jobObject := jobObject{objectType: "service", jobID: val, name: service.Name, namespace: service.Namespace}
+						jobObjects = append(jobObjects, jobObject)
+					} else {
+						level.Debug(orphanedLogger).Log("msg", "Service lacks job label", "name", service.Name, "namespace", service.Namespace)
+					}
+				}
+			}
+			configmaps, err := clientset.CoreV1().ConfigMaps(namespace).List(context.TODO(), listOptions)
+			if err != nil {
+				level.Error(orphanedLogger).Log("msg", "Error getting config maps", "err", err)
+				metricErrorsTotal.Inc()
+				return nil, err
+			}
+			for _, configmap := range configmaps.Items {
+				if val, ok := configmap.Labels[*jobLabel]; ok {
+					level.Debug(orphanedLogger).Log("msg", "ConfigMap has job label", "job", val)
+					if !sliceContains(jobIDs, val) {
+						level.Debug(orphanedLogger).Log("msg", "Found orphaned ConfigMap", "job", val, "name", configmap.Name, "namespace", configmap.Namespace)
+						jobObject := jobObject{objectType: "configmap", jobID: val, name: configmap.Name, namespace: configmap.Namespace}
+						jobObjects = append(jobObjects, jobObject)
+					} else {
+						level.Debug(orphanedLogger).Log("msg", "ConfigMap lacks job label", "name", configmap.Name, "namespace", configmap.Namespace)
+					}
+				}
+			}
+			secrets, err := clientset.CoreV1().Secrets(namespace).List(context.TODO(), listOptions)
+			if err != nil {
+				level.Error(orphanedLogger).Log("msg", "Error getting secrets", "err", err)
+				metricErrorsTotal.Inc()
+				return nil, err
+			}
+			for _, secret := range secrets.Items {
+				if val, ok := secret.Labels[*jobLabel]; ok {
+					level.Debug(orphanedLogger).Log("msg", "Secret has job label", "job", val)
+					if !sliceContains(jobIDs, val) {
+						level.Debug(orphanedLogger).Log("msg", "Found orphaned Secret", "job", val, "name", secret.Name, "namespace", secret.Namespace)
+						jobObject := jobObject{objectType: "secret", jobID: val, name: secret.Name, namespace: secret.Namespace}
+						jobObjects = append(jobObjects, jobObject)
+					} else {
+						level.Debug(orphanedLogger).Log("msg", "Secret lacks job label", "name", secret.Name, "namespace", secret.Namespace)
+					}
+				}
+			}
+		}
+	}
+	return jobObjects, nil
 }
 
 func getJobObjects(clientset kubernetes.Interface, jobs []podJob, logger log.Logger) ([]jobObject, error) {
@@ -441,4 +518,13 @@ func metricGathers() prometheus.Gatherers {
 		gatherers = append(gatherers, prometheus.DefaultGatherer)
 	}
 	return gatherers
+}
+
+func sliceContains(slice []string, str string) bool {
+	for _, s := range slice {
+		if str == s {
+			return true
+		}
+	}
+	return false
 }

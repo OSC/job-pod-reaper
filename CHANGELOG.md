@@ -1,3 +1,8 @@
+## Unreleased
+
+* Support reaping orphaned objects if object's corresponding pod job is gone
+* **BREAKING** Rename --pods-labels flag to --object-labels, rename Helm value podsLabels to objectLabels
+
 ## v0.4.0 / 2021-04-14
 
 * Update Kubernetes Go dependencies to 0.20.5 (Kubernetes 1.20.x)

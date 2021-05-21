@@ -213,12 +213,12 @@ func run(clientset kubernetes.Interface, logger log.Logger) error {
 		level.Error(logger).Log("msg", "Error getting namespaces", "err", err)
 		return err
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, jobIDs, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		level.Error(logger).Log("msg", "Error getting jods", "err", err)
 		return err
 	}
-	orphanedObjects, err := getOrphanedJobObjects(clientset, jobs, namespaces, logger)
+	orphanedObjects, err := getOrphanedJobObjects(clientset, jobs, jobIDs, namespaces, logger)
 	if err != nil {
 		level.Error(logger).Log("msg", "Error getting orphaned objects", "err", err)
 	}
@@ -266,9 +266,10 @@ func getNamespaces(clientset kubernetes.Interface, logger log.Logger) ([]string,
 	return namespaces, nil
 }
 
-func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Logger) ([]podJob, error) {
+func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Logger) ([]podJob, []string, error) {
 	labels := strings.Split(*objectLabels, ",")
 	jobs := []podJob{}
+	jobIDs := []string{}
 	toReap := 0
 	for _, ns := range namespaces {
 		for _, l := range labels {
@@ -279,14 +280,28 @@ func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Log
 			if err != nil {
 				level.Error(logger).Log("msg", "Error getting pod list", "label", l, "namespace", ns, "err", err)
 				metricErrorsTotal.Inc()
-				return nil, err
+				return nil, nil, err
 			}
 			for _, pod := range pods.Items {
+				podLogger := log.With(logger, "pod", pod.Name, "namespace", pod.Namespace)
+				var jobID string
+				if val, ok := pod.Labels[*jobLabel]; ok {
+					level.Debug(podLogger).Log("msg", "Pod has job label", "job", val)
+					jobID = val
+				} else if *jobLabel == "none" {
+					level.Debug(podLogger).Log("msg", "Ignoring absense of job label", "job", "none")
+					jobID = "none"
+				} else {
+					level.Debug(podLogger).Log("msg", "Pod does not have job label, skipping")
+					continue
+				}
+				if !sliceContains(jobIDs, jobID) {
+					jobIDs = append(jobIDs, jobID)
+				}
 				if *reapMax != 0 && toReap >= *reapMax {
 					level.Info(logger).Log("msg", "Max reap reached, skipping rest", "max", *reapMax)
-					return jobs, nil
+					continue
 				}
-				podLogger := log.With(logger, "pod", pod.Name, "namespace", pod.Namespace)
 				var lifetime time.Duration
 				if val, ok := pod.Annotations[lifetimeAnnotation]; !ok {
 					level.Debug(podLogger).Log("msg", "Pod lacks reaper annotation, skipping", "annotation", lifetimeAnnotation)
@@ -300,17 +315,6 @@ func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Log
 						continue
 					}
 				}
-				var jobID string
-				if val, ok := pod.Labels[*jobLabel]; ok {
-					level.Debug(podLogger).Log("msg", "Pod has job label", "job", val)
-					jobID = val
-				} else if *jobLabel == "none" {
-					level.Debug(podLogger).Log("msg", "Ignoring absense of job label", "job", "none")
-					jobID = "none"
-				} else {
-					level.Debug(podLogger).Log("msg", "Pod does not have job label, skipping")
-					continue
-				}
 				currentLifetime := timeNow().Sub(pod.CreationTimestamp.Time)
 				level.Debug(podLogger).Log("msg", "Pod lifetime", "lifetime", currentLifetime.Seconds())
 				if currentLifetime > lifetime {
@@ -321,15 +325,12 @@ func getJobs(clientset kubernetes.Interface, namespaces []string, logger log.Log
 			}
 		}
 	}
-	return jobs, nil
+	return jobs, jobIDs, nil
 }
 
-func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, namespaces []string, logger log.Logger) ([]jobObject, error) {
+func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs []string, namespaces []string, logger log.Logger) ([]jobObject, error) {
+	level.Debug(logger).Log("msg", "JobIDs to evaluate being orphaned", "jobIDs", strings.Join(jobIDs, ","))
 	jobObjects := []jobObject{}
-	jobIDs := []string{}
-	for _, job := range jobs {
-		jobIDs = append(jobIDs, job.jobID)
-	}
 	labels := strings.Split(*objectLabels, ",")
 	for _, namespace := range namespaces {
 		orphanedLogger := log.With(logger, "namespace", namespace)
@@ -351,8 +352,10 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, namesp
 						jobObject := jobObject{objectType: "service", jobID: val, name: service.Name, namespace: service.Namespace}
 						jobObjects = append(jobObjects, jobObject)
 					} else {
-						level.Debug(orphanedLogger).Log("msg", "Service lacks job label", "name", service.Name, "namespace", service.Namespace)
+						level.Debug(orphanedLogger).Log("msg", "Service is not orphaned", "job", val, "name", service.Name, "namespace", service.Namespace)
 					}
+				} else {
+					level.Debug(orphanedLogger).Log("msg", "Service lacks job label", "name", service.Name, "namespace", service.Namespace)
 				}
 			}
 			configmaps, err := clientset.CoreV1().ConfigMaps(namespace).List(context.TODO(), listOptions)
@@ -369,8 +372,10 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, namesp
 						jobObject := jobObject{objectType: "configmap", jobID: val, name: configmap.Name, namespace: configmap.Namespace}
 						jobObjects = append(jobObjects, jobObject)
 					} else {
-						level.Debug(orphanedLogger).Log("msg", "ConfigMap lacks job label", "name", configmap.Name, "namespace", configmap.Namespace)
+						level.Debug(orphanedLogger).Log("msg", "ConfigMap is not orphaned", "job", val, "name", configmap.Name, "namespace", configmap.Namespace)
 					}
+				} else {
+					level.Debug(orphanedLogger).Log("msg", "ConfigMap lacks job label", "name", configmap.Name, "namespace", configmap.Namespace)
 				}
 			}
 			secrets, err := clientset.CoreV1().Secrets(namespace).List(context.TODO(), listOptions)
@@ -387,8 +392,10 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, namesp
 						jobObject := jobObject{objectType: "secret", jobID: val, name: secret.Name, namespace: secret.Namespace}
 						jobObjects = append(jobObjects, jobObject)
 					} else {
-						level.Debug(orphanedLogger).Log("msg", "Secret lacks job label", "name", secret.Name, "namespace", secret.Namespace)
+						level.Debug(orphanedLogger).Log("msg", "Secret is not orphaned", "job", val, "name", secret.Name, "namespace", secret.Namespace)
 					}
+				} else {
+					level.Debug(orphanedLogger).Log("msg", "Secret lacks job label", "name", secret.Name, "namespace", secret.Namespace)
 				}
 			}
 		}

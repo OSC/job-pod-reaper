@@ -1,6 +1,7 @@
 ## Unreleased
 
 * Fix Helm chart extraArgs
+* Fix logic for finding orphaned job objects
 
 ## v0.5.0 / 2021-05-20
 

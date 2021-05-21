@@ -16,6 +16,8 @@ package main
 import (
 	"context"
 	"os"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -77,6 +79,19 @@ func clientset() kubernetes.Interface {
 		},
 	}, &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ondemand-user1-job5",
+			Namespace: "user-user1",
+			Annotations: map[string]string{
+				"pod.kubernetes.io/lifetime": "3h",
+			},
+			Labels: map[string]string{
+				"job":                          "5",
+				"app.kubernetes.io/managed-by": "open-ondemand",
+			},
+			CreationTimestamp: podStartTime,
+		},
+	}, &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ondemand-job2",
 			Namespace: "user-user2",
 			Annotations: map[string]string{
@@ -107,6 +122,15 @@ func clientset() kubernetes.Interface {
 			Namespace: "user-user1",
 			Labels: map[string]string{
 				"job": "1",
+			},
+		},
+	}, &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "service-user1-job5",
+			Namespace: "user-user1",
+			Labels: map[string]string{
+				"job":                          "5",
+				"app.kubernetes.io/managed-by": "open-ondemand",
 			},
 		},
 	}, &v1.Service{
@@ -235,7 +259,7 @@ func TestGetJobs(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, jobIDs, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -248,6 +272,16 @@ func TestGetJobs(t *testing.T) {
 	}
 	if val := jobs[1].jobID; val != "2" {
 		t.Errorf("Unexpected jobID, got: %v", val)
+	}
+	if len(jobIDs) != 3 {
+		t.Errorf("Unexpected number jobIDs, got %d", len(jobIDs))
+		return
+	}
+	expectedJobIDs := []string{"1", "2", "5"}
+	sort.Strings(jobIDs)
+	sort.Strings(expectedJobIDs)
+	if !reflect.DeepEqual(jobIDs, expectedJobIDs) {
+		t.Errorf("Unexpected value for jobIDs\nExpected %v\nGot %v\n", expectedJobIDs, jobIDs)
 	}
 }
 
@@ -268,7 +302,7 @@ func TestGetJobsCase1(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, _, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -298,7 +332,7 @@ func TestGetJobsNoPodLabels(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, _, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -334,7 +368,7 @@ func TestGetJobsNamespaceLabels(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, _, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -364,7 +398,7 @@ func TestGetJobsNoJobLabel(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	jobs, err := getJobs(clientset, namespaces, logger)
+	jobs, jobIDs, err := getJobs(clientset, namespaces, logger)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -380,6 +414,14 @@ func TestGetJobsNoJobLabel(t *testing.T) {
 	}
 	if val := jobs[2].jobID; val != "none" {
 		t.Errorf("Unexpected jobID, got: %v", val)
+	}
+	if len(jobIDs) != 1 {
+		t.Errorf("Unexpected number jobIDs, got %d", len(jobIDs))
+		return
+	}
+	expectedJobIDs := []string{"none"}
+	if !reflect.DeepEqual(jobIDs, expectedJobIDs) {
+		t.Errorf("Unexpected value for jobIDs\nExpected %v\nGot %v\n", expectedJobIDs, jobIDs)
 	}
 }
 
@@ -405,14 +447,14 @@ func TestRunOnDemand(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error getting pods: %v", err)
 	}
-	if len(pods.Items) != 2 {
+	if len(pods.Items) != 3 {
 		t.Errorf("Unexpected number of pods, got: %d", len(pods.Items))
 	}
 	services, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting services: %v", err)
 	}
-	if len(services.Items) != 0 {
+	if len(services.Items) != 1 {
 		t.Errorf("Unexpected number of services, got: %d", len(services.Items))
 	}
 	configmaps, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
@@ -422,12 +464,12 @@ func TestRunOnDemand(t *testing.T) {
 	if len(configmaps.Items) != 0 {
 		t.Errorf("Unexpected number of services, got: %d", len(configmaps.Items))
 	}
-	secrets, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	secrets, err := clientset.CoreV1().Secrets(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting secrets: %v", err)
 	}
 	if len(secrets.Items) != 0 {
-		t.Errorf("Unexpected number of services, got: %d", len(secrets.Items))
+		t.Errorf("Unexpected number of secrets, got: %d", len(secrets.Items))
 	}
 
 	expected := `
@@ -473,14 +515,14 @@ func TestRun(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error getting pods: %v", err)
 	}
-	if len(pods.Items) != 1 {
+	if len(pods.Items) != 2 {
 		t.Errorf("Unexpected number of pods, got: %d", len(pods.Items))
 	}
 	services, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting services: %v", err)
 	}
-	if len(services.Items) != 0 {
+	if len(services.Items) != 1 {
 		t.Errorf("Unexpected number of services, got: %d", len(services.Items))
 	}
 	configmaps, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
@@ -490,12 +532,12 @@ func TestRun(t *testing.T) {
 	if len(configmaps.Items) != 0 {
 		t.Errorf("Unexpected number of services, got: %d", len(configmaps.Items))
 	}
-	secrets, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	secrets, err := clientset.CoreV1().Secrets(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting secrets: %v", err)
 	}
 	if len(secrets.Items) != 0 {
-		t.Errorf("Unexpected number of services, got: %d", len(secrets.Items))
+		t.Errorf("Unexpected number of secrets, got: %d", len(secrets.Items))
 	}
 
 	expected := `
@@ -541,14 +583,14 @@ func TestRunNoJobLabel(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error getting pods: %v", err)
 	}
-	if len(pods.Items) != 0 {
+	if len(pods.Items) != 1 {
 		t.Errorf("Unexpected number of pods, got: %d", len(pods.Items))
 	}
 	services, err := clientset.CoreV1().Services(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("Unexpected error getting services: %v", err)
 	}
-	if len(services.Items) != 3 {
+	if len(services.Items) != 4 {
 		t.Errorf("Unexpected number of services, got: %d", len(services.Items))
 	}
 	configmaps, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})

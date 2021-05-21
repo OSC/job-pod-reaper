@@ -1,0 +1,6 @@
+config:
+  reapNamespaces: false
+  namespaceLabels: app.kubernetes.io/name=open-ondemand
+  objectLabels: app.kubernetes.io/managed-by=open-ondemand
+extraArgs:
+  - --log-level=debug

@@ -52,8 +52,8 @@ spec:
             - --job-label={{ .Values.config.jobLabel }}
           {{- end }}
             - --listen-address=:{{ .Values.config.httpPort | default 8080 }}
-          {{- with .Values.extraArgs }}
-          {{ toYaml . | indent 12 }}
+          {{- range .Values.extraArgs }}
+            - {{ . }}
           {{- end }}
           ports:
             - containerPort: {{ .Values.config.httpPort | default 8080 }}

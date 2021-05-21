@@ -1,3 +1,7 @@
+## Unreleased
+
+* Fix Helm chart extraArgs
+
 ## v0.5.0 / 2021-05-20
 
 * Support reaping orphaned objects if object's corresponding pod job is gone

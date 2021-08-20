@@ -2,6 +2,18 @@ apiVersion: v1
 entries:
   job-pod-reaper:
   - apiVersion: v2
+    appVersion: v0.5.2
+    created: "2021-08-20T16:35:29.342970067Z"
+    description: Job Pod Reaper
+    digest: a14149c154325f829ad1de7f852b5f0704e751bbc34ea27a21138912426c987f
+    maintainers:
+    - name: treydock
+    name: job-pod-reaper
+    type: application
+    urls:
+    - https://OSC.github.io/job-pod-reaper/job-pod-reaper-v0.5.2.tgz
+    version: v0.5.2
+  - apiVersion: v2
     appVersion: v0.5.1
     created: "2021-05-21T15:09:21.160208818Z"
     description: Job Pod Reaper
@@ -73,4 +85,4 @@ entries:
     urls:
     - https://OSC.github.io/job-pod-reaper/job-pod-reaper-0.2.0.tgz
     version: 0.2.0
-generated: "2021-05-21T15:09:21.159502692Z"
+generated: "2021-08-20T16:35:29.34042154Z"

@@ -1,3 +1,7 @@
+## v0.5.2 / 2021-08-20
+
+* Fix run duration metrics to be more accurate
+
 ## v0.5.1 / 2021-05-20
 
 * Fix Helm chart extraArgs

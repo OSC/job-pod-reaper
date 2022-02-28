@@ -2,7 +2,7 @@ apiVersion: v2
 name: job-pod-reaper
 description: Job Pod Reaper
 type: application
-version: v0.5.2
-appVersion: v0.5.2
+version: v0.6.0
+appVersion: v0.6.0
 maintainers:
   - name: treydock

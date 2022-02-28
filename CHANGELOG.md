@@ -1,3 +1,7 @@
+## v0.6.1 / 2022-02-28
+
+* Improved pod security - OnDemand YAML deployment
+
 ## v0.6.0 / 2022-02-28
 
 * Improved pod security

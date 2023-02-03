@@ -1,3 +1,7 @@
+## v0.7.0 / 2023-02-03
+
+* Update to Go 1.19 and update Go module dependencies (#26)
+
 ## v0.6.1 / 2022-02-28
 
 * Improved pod security - OnDemand YAML deployment

@@ -1,4 +1,4 @@
-GOPATH := $(shell go env GOPATH)
+export GOPATH ?= $(firstword $(subst :, ,$(shell go env GOPATH)))
 GOOS := linux
 GOARCH := amd64
 GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint

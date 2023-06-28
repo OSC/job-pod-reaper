@@ -20,7 +20,7 @@ jobs:
           else
             version=$ref
           fi
-          echo "REF=${reg}" >> $GITHUB_ENV
+          echo "REF=${ref}" >> $GITHUB_ENV
           echo "VERSION=${version}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2

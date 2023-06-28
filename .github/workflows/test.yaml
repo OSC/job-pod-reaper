@@ -77,9 +77,9 @@ jobs:
           version: v3.8.0
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.9
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.0.1
+        uses: helm/chart-testing-action@v2.4.0
       - name: Download image
         uses: actions/download-artifact@v3
         with:

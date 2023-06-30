@@ -2,3 +2,4 @@
 install
 *.md
 *.tar.gz
+dist

@@ -30,6 +30,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - name: Login to quay.io
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ACCESS_TOKEN }}
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v4
@@ -37,7 +42,7 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-          tags: ohiosupercomputer/job-pod-reaper:${{ env.VERSION }}
+          tags: ohiosupercomputer/job-pod-reaper:${{ env.VERSION }},quay.io/ohiosupercomputercenter/job-pod-reaper:${{ env.VERSION }}
           build-args: |
             VERSION=${{ env.REF }}
       - name: Image digest

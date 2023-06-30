@@ -31,13 +31,11 @@ jobs:
         run: |
           rm -rf release
           make release
-          make release-notes > release/release-notes.out
-          cat release/release-notes.out
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --rm-dist --debug --release-notes=release/release-notes.out
+          args: release --rm-dist --debug
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish Helm charts

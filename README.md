@@ -1,7 +1,6 @@
 [![CI Status](https://github.com/OSC/job-pod-reaper/workflows/test/badge.svg?branch=main)](https://github.com/OSC/job-pod-reaper/actions?query=workflow%3Atest)
 [![GitHub release](https://img.shields.io/github/v/release/OSC/job-pod-reaper?include_prereleases&sort=semver)](https://github.com/OSC/job-pod-reaper/releases/latest)
 ![GitHub All Releases](https://img.shields.io/github/downloads/OSC/job-pod-reaper/total)
-![Docker Pulls](https://img.shields.io/docker/pulls/ohiosupercomputer/job-pod-reaper)
 [![Go Report Card](https://goreportcard.com/badge/github.com/OSC/job-pod-reaper?ts=1)](https://goreportcard.com/report/github.com/OSC/job-pod-reaper)
 [![codecov](https://codecov.io/gh/OSC/job-pod-reaper/branch/main/graph/badge.svg)](https://codecov.io/gh/OSC/job-pod-reaper)
 

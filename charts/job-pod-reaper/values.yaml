@@ -15,7 +15,7 @@ config:
 extraArgs: []
 
 image:
-  repository: docker.io/ohiosupercomputer/job-pod-reaper
+  repository: quay.io/ohiosupercomputercenter/job-pod-reaper
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag:

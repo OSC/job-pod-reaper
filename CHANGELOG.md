@@ -1,4 +1,9 @@
-## v0.8.0 / 2023-0629
+## v0.9.0 / 2023-06-30
+
+* Switch container images to use quay.io (#29)
+* Bump golang.org/x/net from 0.5.0 to 0.7.0 (#28)
+
+## v0.8.0 / 2023-06-29
 
 * Update to Go 1.20 (#27)
 

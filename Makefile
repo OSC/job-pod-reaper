@@ -60,10 +60,6 @@ release:
 	@sed 's/:latest/:$(VERSION)/g' install/ondemand-deployment.yaml > release/ondemand-deployment.yaml
 	@cp install/namespace-rbac.yaml release/namespace-rbac.yaml
 
-release-notes:
-	@bash -c 'while IFS= read -r line; do if [[ "$$line" == "## "* && "$$line" != "## $(VERSION) "* ]]; then break ; fi; echo "$$line"; done < "CHANGELOG.md"' \
-	true
-
 bump-version:
 	@grep -q '## $(VERSION)' CHANGELOG.md || { echo ">> Update CHANGELOG.md with version" ; exit 1; }
 	@sed -i -e 's/version:.*/version: $(VERSION)/g' -e 's/appVersion:.*/appVersion: $(VERSION)/g' charts/job-pod-reaper/Chart.yaml

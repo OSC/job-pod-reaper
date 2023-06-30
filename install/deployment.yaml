@@ -18,7 +18,7 @@ spec:
       serviceAccountName: job-pod-reaper
       containers:
       - name: job-pod-reaper
-        image: docker.io/ohiosupercomputer/job-pod-reaper:latest
+        image: quay.io/ohiosupercomputercenter/job-pod-reaper:latest
         imagePullPolicy: Always
         args:
         - --reap-max=30

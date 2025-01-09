@@ -1,3 +1,7 @@
+## v0.10.1 / 2025-01-09
+
+* Update all Go dependencies except Kubernetes (#32)
+
 ## v0.10.0 / 2025-01-09
 
 * Major updates (#31)

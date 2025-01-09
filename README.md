@@ -21,7 +21,9 @@ Metrics about the count of reaped resources, duration of last reaping, and error
 
 ## Kubernetes support
 
-Currently this code is built and tested against Kubernetes 1.25.x and 1.26.x.
+Currently this code is built and tested against Kubernetes 1.29.x.
+
+The Kubernetes APIs used by this project do not tend to change between Kubernetes releases so it is likely this code will work on all 1.x releases of Kubernetes.
 
 ## Install
 

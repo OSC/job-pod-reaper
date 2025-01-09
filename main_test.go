@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"reflect"
 	"sort"
@@ -22,9 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -208,8 +208,7 @@ func TestGetNamespaces(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	clientset := clientset()
 	namespaces, err := getNamespaces(clientset, logger)
 	if err != nil {
@@ -227,8 +226,7 @@ func TestGetNamespacesByLabel(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--namespace-labels=app.kubernetes.io/name=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	clientset := clientset()
 	namespaces, err := getNamespaces(clientset, logger)
 	if err != nil {
@@ -246,8 +244,7 @@ func TestGetJobs(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -289,8 +286,7 @@ func TestGetJobsCase1(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 13:45:00")
@@ -319,8 +315,7 @@ func TestGetJobsNoPodLabels(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -355,8 +350,7 @@ func TestGetJobsNamespaceLabels(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--namespace-labels=app.kubernetes.io/name=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -385,8 +379,7 @@ func TestGetJobsNoJobLabel(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--job-label=none"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -429,8 +422,7 @@ func TestRunOnDemand(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--object-labels=app.kubernetes.io/managed-by=open-ondemand"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -497,8 +489,7 @@ func TestRun(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")
@@ -565,8 +556,7 @@ func TestRunNoJobLabel(t *testing.T) {
 	if _, err := kingpin.CommandLine.Parse([]string{"--job-label=none"}); err != nil {
 		t.Fatal(err)
 	}
-	w := log.NewSyncWriter(os.Stderr)
-	logger := log.NewLogfmtLogger(w)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	timeNow = func() time.Time {
 		t, _ := time.Parse("01/02/2006 15:04:05", "01/01/2020 15:00:00")

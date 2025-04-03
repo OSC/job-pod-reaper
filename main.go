@@ -174,7 +174,7 @@ func main() {
 
 	for {
 		var errNum int
-		start := timeNow()
+		start = timeNow()
 		err = run(clientset, logger)
 		metricDuration.Set(time.Since(start).Seconds())
 		if err != nil {
@@ -331,7 +331,7 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 			}
 			for _, service := range services.Items {
 				if start.Before(service.CreationTimestamp.Time) {
-					break
+					continue
 				}
 				if val, ok := service.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("Service has job label", "job", val)
@@ -354,7 +354,7 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 			}
 			for _, configmap := range configmaps.Items {
 				if start.Before(configmap.CreationTimestamp.Time) {
-					break
+					continue
 				}
 				if val, ok := configmap.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("ConfigMap has job label", "job", val)
@@ -377,7 +377,7 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 			}
 			for _, secret := range secrets.Items {
 				if start.Before(secret.CreationTimestamp.Time) {
-					break
+					continue
 				}
 				if val, ok := secret.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("Secret has job label", "job", val)

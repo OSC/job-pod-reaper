@@ -619,6 +619,54 @@ func TestRunNoJobLabel(t *testing.T) {
 	}
 }
 
+func TestOrphanedFutureResourcesIgnored(t *testing.T) {
+
+	futureTime, _ := time.Parse("01/01/2999 23:59:59", "01/01/2999 23:59:59")
+	clientset := fake.NewSimpleClientset(&v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "future",
+		},
+	}, &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "service",
+			Namespace: "future",
+			Labels: map[string]string{
+				"job": "1",
+			},
+			CreationTimestamp: metav1.NewTime(futureTime),
+		},
+	}, &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "configmap",
+			Namespace: "future",
+			Labels: map[string]string{
+				"job": "1",
+			},
+			CreationTimestamp: metav1.NewTime(futureTime),
+		},
+	}, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "future",
+			Labels: map[string]string{
+				"job": "1",
+			},
+			CreationTimestamp: metav1.NewTime(futureTime),
+		},
+	})
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	orphanedObjects, err := getOrphanedJobObjects(clientset, []podJob{}, []string{}, []string{"future"}, logger)
+
+	if err != nil {
+		t.Errorf("Not supposed to have error during orphaned job calculation: %v", err)
+	}
+
+	if len(orphanedObjects) != 0 {
+		t.Errorf("objects from the future cannot be orphaned: %v", orphanedObjects)
+	}
+}
+
 func resetCounters() {
 	metricReapedTotal.Reset()
 	metricReapedTotal.WithLabelValues("pod")

@@ -621,17 +621,21 @@ func TestRunNoJobLabel(t *testing.T) {
 
 func TestOrphanedFutureResourcesIgnored(t *testing.T) {
 
-	futureTime, _ := time.Parse("01/01/2999 23:59:59", "01/01/2999 23:59:59")
+	futureTime, _ := time.Parse("01/02/2006 15:04:05", "01/01/2999 23:59:59")
 	clientset := fake.NewSimpleClientset(&v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "future",
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "open-ondemand",
+			},
 		},
 	}, &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "service",
 			Namespace: "future",
 			Labels: map[string]string{
-				"job": "1",
+				"job":                          "1",
+				"app.kubernetes.io/managed-by": "open-ondemand",
 			},
 			CreationTimestamp: metav1.NewTime(futureTime),
 		},
@@ -640,7 +644,8 @@ func TestOrphanedFutureResourcesIgnored(t *testing.T) {
 			Name:      "configmap",
 			Namespace: "future",
 			Labels: map[string]string{
-				"job": "1",
+				"job":                          "1",
+				"app.kubernetes.io/managed-by": "open-ondemand",
 			},
 			CreationTimestamp: metav1.NewTime(futureTime),
 		},
@@ -649,13 +654,18 @@ func TestOrphanedFutureResourcesIgnored(t *testing.T) {
 			Name:      "secret",
 			Namespace: "future",
 			Labels: map[string]string{
-				"job": "1",
+				"job":                          "1",
+				"app.kubernetes.io/managed-by": "open-ondemand",
 			},
 			CreationTimestamp: metav1.NewTime(futureTime),
 		},
 	})
 
+	if _, err := kingpin.CommandLine.Parse([]string{"--namespace-labels=app.kubernetes.io/name=open-ondemand"}); err != nil {
+		t.Fatal(err)
+	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+
 	orphanedObjects, err := getOrphanedJobObjects(clientset, []podJob{}, []string{}, []string{"future"}, logger)
 
 	if err != nil {

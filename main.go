@@ -56,6 +56,7 @@ var (
 	logLevel        = kingpin.Flag("log-level", "Log level, One of: [debug, info, warn, error]").Default("info").Envar("LOG_LEVEL").Enum(promslog.LevelFlagOptions...)
 	logFormat       = kingpin.Flag("log-format", "Log format, One of: [logfmt, json]").Default("logfmt").Envar("LOG_FORMAT").Enum(promslog.FormatFlagOptions...)
 	timeNow         = time.Now
+	start           = timeNow()
 	metricBuildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "build_info",
@@ -173,7 +174,7 @@ func main() {
 
 	for {
 		var errNum int
-		start := timeNow()
+		start = timeNow()
 		err = run(clientset, logger)
 		metricDuration.Set(time.Since(start).Seconds())
 		if err != nil {
@@ -329,6 +330,9 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 				return nil, err
 			}
 			for _, service := range services.Items {
+				if start.Before(service.CreationTimestamp.Time) {
+					continue
+				}
 				if val, ok := service.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("Service has job label", "job", val)
 					if !sliceContains(jobIDs, val) {
@@ -349,6 +353,9 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 				return nil, err
 			}
 			for _, configmap := range configmaps.Items {
+				if start.Before(configmap.CreationTimestamp.Time) {
+					continue
+				}
 				if val, ok := configmap.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("ConfigMap has job label", "job", val)
 					if !sliceContains(jobIDs, val) {
@@ -369,6 +376,9 @@ func getOrphanedJobObjects(clientset kubernetes.Interface, jobs []podJob, jobIDs
 				return nil, err
 			}
 			for _, secret := range secrets.Items {
+				if start.Before(secret.CreationTimestamp.Time) {
+					continue
+				}
 				if val, ok := secret.Labels[*jobLabel]; ok {
 					orphanedLogger.Debug("Secret has job label", "job", val)
 					if !sliceContains(jobIDs, val) {

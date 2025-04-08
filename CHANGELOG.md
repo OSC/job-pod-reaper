@@ -1,3 +1,7 @@
+## v0.10.2 / 2025-04-08
+
+* don't remove resources created in the middle of the run (#34)
+
 ## v0.10.1 / 2025-01-09
 
 * Update all Go dependencies except Kubernetes (#32)

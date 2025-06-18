@@ -1,3 +1,7 @@
+## v0.11.0 / 2025-06-18
+
+* Update to Go 1.24.4 and update dependencies (#36)
+
 ## v0.10.2 / 2025-04-08
 
 * don't remove resources created in the middle of the run (#34)

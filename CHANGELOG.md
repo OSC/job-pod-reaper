@@ -1,3 +1,9 @@
+## v0.12.0 / 2026-04-09
+
+* Update all dependencies including Kubernetes to 1.32.13 and Go to 1.26 (#38)
+  * Switch to distroless container
+* Upgrade actions to their latest versions (#37)
+
 ## v0.11.0 / 2025-06-18
 
 * Update to Go 1.24.4 and update dependencies (#36)
